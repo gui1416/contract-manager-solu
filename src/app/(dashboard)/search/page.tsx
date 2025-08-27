@@ -74,7 +74,6 @@ export default function SearchPage() {
     .select("*")
     .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,client_name.ilike.%${searchTerm}%`)
 
-   // Apply filters
    if (filters.status !== "all") {
     query = query.eq("status", filters.status)
    }
@@ -83,7 +82,6 @@ export default function SearchPage() {
     query = query.eq("contract_type", filters.contract_type)
    }
 
-   // Date range filter
    if (filters.date_range !== "all") {
     const now = new Date()
     const startDate = new Date()
@@ -126,7 +124,6 @@ export default function SearchPage() {
 
  return (
   <div className="flex flex-col h-full">
-   {/* Header */}
    <div className="flex items-center justify-between p-6 border-b border-border">
     <div>
      <h1 className="text-2xl font-semibold text-foreground">Pesquisa Avançada</h1>
@@ -134,7 +131,6 @@ export default function SearchPage() {
     </div>
    </div>
 
-   {/* Search Form */}
    <div className="p-6 border-b border-border bg-muted/30">
     <div className="space-y-4">
      <div className="relative">
@@ -195,7 +191,6 @@ export default function SearchPage() {
     </div>
    </div>
 
-   {/* Results */}
    <div className="flex-1 overflow-auto p-6">
     {isLoading ? (
      <div className="flex items-center justify-center py-12">

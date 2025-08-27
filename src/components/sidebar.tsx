@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -22,6 +22,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { User } from "@supabase/supabase-js"
 
 const menuItems = [
  {
@@ -29,7 +30,7 @@ const menuItems = [
   items: [
    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
    { icon: FileText, label: "Contratos", href: "/contracts" },
-   { icon: Search, label: "Pesquisar", href: "/search" },
+   { icon: FileSignature, label: "Assinaturas", href: "/signatures" },
    { icon: Bell, label: "Alertas", href: "/alerts" },
   ],
  },
@@ -37,7 +38,7 @@ const menuItems = [
   title: "GESTÃO",
   items: [
    { icon: FileSignature, label: "Templates", href: "/templates" },
-   { icon: FileText, label: "Assinaturas", href: "/signatures" },
+   { icon: Search, label: "Pesquisar", href: "/search" },
   ],
  },
  {
@@ -49,25 +50,64 @@ const menuItems = [
  },
 ]
 
+interface Profile {
+ first_name: string;
+ last_name: string;
+}
+
 export function Sidebar() {
  const [collapsed, setCollapsed] = useState(false)
+ const [user, setUser] = useState<User | null>(null);
+ const [profile, setProfile] = useState<Profile | null>(null);
  const pathname = usePathname()
  const router = useRouter()
+ const supabase = createClient()
+
+ useEffect(() => {
+  const fetchUserData = async () => {
+   const { data: { user } } = await supabase.auth.getUser();
+   setUser(user);
+
+   if (user) {
+    const { data: profileData, error } = await supabase
+     .from('profiles')
+     .select('first_name, last_name')
+     .eq('id', user.id)
+     .single();
+
+    if (error) {
+     console.error("Erro ao buscar perfil:", error);
+    } else {
+     setProfile(profileData);
+    }
+   }
+  }
+  fetchUserData();
+ }, [supabase]);
+
 
  const handleSignOut = async () => {
-  const supabase = createClient()
   await supabase.auth.signOut()
   router.push("/auth/login")
+ }
+
+ const getInitials = () => {
+  if (profile?.first_name && profile?.last_name) {
+   return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+  }
+  if (user?.email) {
+   return user.email[0].toUpperCase();
+  }
+  return 'U';
  }
 
  return (
   <div
    className={cn(
     "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
-    collapsed ? "w-16" : "w-64",
+    collapsed ? "w-16" : "w-64"
    )}
   >
-   {/* Header */}
    <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
     {!collapsed && (
      <div className="flex items-center gap-2">
@@ -85,7 +125,6 @@ export function Sidebar() {
     </Button>
    </div>
 
-   {/* Navigation */}
    <ScrollArea className="flex-1 px-3 py-4">
     <div className="space-y-6">
      {menuItems.map((section, index) => (
@@ -103,7 +142,7 @@ export function Sidebar() {
            className={cn(
             "w-full justify-start gap-3 h-9",
             collapsed && "justify-center px-2",
-            pathname === item.href && "bg-sidebar-accent text-sidebar-accent-foreground",
+            pathname === item.href && "bg-sidebar-accent text-sidebar-accent-foreground"
            )}
           >
            <item.icon className="w-4 h-4 shrink-0" />
@@ -118,17 +157,20 @@ export function Sidebar() {
     </div>
    </ScrollArea>
 
-   {/* User Profile */}
    <div className="p-3 border-t border-sidebar-border">
     <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
      <Avatar className="w-8 h-8">
       <AvatarImage src="/placeholder.svg?height=32&width=32" />
-      <AvatarFallback>JS</AvatarFallback>
+      <AvatarFallback>{getInitials()}</AvatarFallback>
      </Avatar>
      {!collapsed && (
       <div className="flex-1 min-w-0">
-       <p className="text-sm font-medium text-sidebar-foreground truncate">João Silva</p>
-       <p className="text-xs text-sidebar-foreground/60 truncate">joao@empresa.com</p>
+       <p className="text-sm font-medium text-sidebar-foreground truncate">
+        {profile ? `${profile.first_name} ${profile.last_name}` : (user?.email || 'Usuário')}
+       </p>
+       <p className="text-xs text-sidebar-foreground/60 truncate">
+        {user?.email}
+       </p>
       </div>
      )}
      {!collapsed && (

@@ -30,7 +30,6 @@ export default function SettingsPage() {
  const [user, setUser] = useState<any>(null)
  const router = useRouter()
 
- // Notification settings
  const [notifications, setNotifications] = useState({
   email_alerts: true,
   contract_expiry: true,
@@ -101,7 +100,6 @@ export default function SettingsPage() {
 
    if (error) throw error
 
-   // Show success message (you could add a toast here)
    console.log("Perfil salvo com sucesso!")
   } catch (error) {
    console.error("Erro ao salvar perfil:", error)
@@ -137,7 +135,6 @@ export default function SettingsPage() {
 
  return (
   <div className="flex flex-col h-full">
-   {/* Header */}
    <div className="flex items-center justify-between p-6 border-b border-border">
     <div>
      <h1 className="text-2xl font-semibold text-foreground">Configurações</h1>
@@ -149,10 +146,8 @@ export default function SettingsPage() {
     </Button>
    </div>
 
-   {/* Content */}
    <div className="flex-1 overflow-auto p-6">
     <div className="max-w-4xl mx-auto space-y-6">
-     {/* Profile Section */}
      <Card>
       <CardHeader>
        <div className="flex items-center gap-4">
@@ -227,7 +222,6 @@ export default function SettingsPage() {
       </CardContent>
      </Card>
 
-     {/* Notifications Section */}
      <Card>
       <CardHeader>
        <CardTitle className="flex items-center gap-2">
@@ -293,7 +287,6 @@ export default function SettingsPage() {
       </CardContent>
      </Card>
 
-     {/* Security Section */}
      <Card>
       <CardHeader>
        <CardTitle className="flex items-center gap-2">
@@ -325,7 +318,6 @@ export default function SettingsPage() {
       </CardContent>
      </Card>
 
-     {/* Data Section */}
      <Card>
       <CardHeader>
        <CardTitle className="flex items-center gap-2">

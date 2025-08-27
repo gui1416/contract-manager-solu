@@ -98,7 +98,6 @@ export function Dashboard() {
    const contracts = contractsData || []
    setContracts(contracts)
 
-   // Calculate stats
    const now = new Date()
    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -174,7 +173,6 @@ export function Dashboard() {
 
  return (
   <div className="flex flex-col h-full">
-   {/* Header */}
    <div className="flex items-center justify-between p-6 border-b border-border">
     <div>
      <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
@@ -194,9 +192,7 @@ export function Dashboard() {
     </div>
    </div>
 
-   {/* Content */}
    <div className="flex-1 overflow-auto p-6">
-    {/* Stats Grid */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
      {statsCards.map((stat, index) => (
       <Card key={index}>
@@ -213,7 +209,6 @@ export function Dashboard() {
      ))}
     </div>
 
-    {/* Value Summary */}
     {stats.totalValue > 0 && (
      <Card className="mb-8">
       <CardHeader>
@@ -229,7 +224,6 @@ export function Dashboard() {
      </Card>
     )}
 
-    {/* Recent Contracts */}
     <Card>
      <CardHeader>
       <div className="flex items-center justify-between">

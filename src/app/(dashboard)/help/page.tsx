@@ -61,15 +61,12 @@ export default function HelpPage() {
 
  const handleContactSubmit = (e: React.FormEvent) => {
   e.preventDefault()
-  // Here you would typically send the contact form data
   console.log("Formulário de contato enviado:", contactForm)
-  // Reset form
   setContactForm({ name: "", email: "", subject: "", message: "" })
  }
 
  return (
   <div className="flex flex-col h-full">
-   {/* Header */}
    <div className="flex items-center justify-between p-6 border-b border-border">
     <div>
      <h1 className="text-2xl font-semibold text-foreground">Central de Ajuda</h1>
@@ -77,10 +74,8 @@ export default function HelpPage() {
     </div>
    </div>
 
-   {/* Content */}
    <div className="flex-1 overflow-auto p-6">
     <div className="max-w-4xl mx-auto space-y-8">
-     {/* Quick Actions */}
      <div className="grid md:grid-cols-3 gap-6">
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
        <CardHeader className="text-center">
@@ -107,7 +102,6 @@ export default function HelpPage() {
       </Card>
      </div>
 
-     {/* FAQ Section */}
      <Card>
       <CardHeader>
        <CardTitle className="flex items-center gap-2">
@@ -116,7 +110,6 @@ export default function HelpPage() {
        </CardTitle>
        <CardDescription>Encontre respostas para as dúvidas mais comuns</CardDescription>
 
-       {/* Search FAQ */}
        <div className="relative mt-4">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -145,7 +138,6 @@ export default function HelpPage() {
       </CardContent>
      </Card>
 
-     {/* Contact Form */}
      <Card>
       <CardHeader>
        <CardTitle className="flex items-center gap-2">
@@ -207,7 +199,6 @@ export default function HelpPage() {
       </CardContent>
      </Card>
 
-     {/* Additional Resources */}
      <Card>
       <CardHeader>
        <CardTitle>Recursos Adicionais</CardTitle>
