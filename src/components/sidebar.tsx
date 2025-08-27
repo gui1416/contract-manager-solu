@@ -28,63 +28,64 @@ const menuItems = [
  {
   title: "PRINCIPAL",
   items: [
-   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-   { icon: FileText, label: "Contratos", href: "/contracts" },
-   { icon: FileSignature, label: "Assinaturas", href: "/signatures" },
-   { icon: Bell, label: "Alertas", href: "/alerts" },
+   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+   { icon: FileText, label: "Contratos", href: "/dashboard/contracts" },
+   { icon: FileSignature, label: "Assinaturas", href: "/dashboard/signatures" },
+   { icon: Bell, label: "Alertas", href: "/dashboard/alerts" },
   ],
  },
  {
   title: "GESTÃO",
   items: [
-   { icon: FileSignature, label: "Templates", href: "/templates" },
-   { icon: Search, label: "Pesquisar", href: "/search" },
+   { icon: FileSignature, label: "Templates", href: "/dashboard/templates" },
+   { icon: Search, label: "Pesquisar", href: "/dashboard/search" },
   ],
  },
  {
   title: "SUPORTE",
   items: [
-   { icon: Settings, label: "Configurações", href: "/settings" },
-   { icon: HelpCircle, label: "Ajuda", href: "/help" },
+   { icon: Settings, label: "Configurações", href: "/dashboard/settings" },
+   { icon: HelpCircle, label: "Ajuda", href: "/dashboard/help" },
   ],
  },
 ]
 
 interface Profile {
- first_name: string;
- last_name: string;
+ first_name: string
+ last_name: string
 }
 
 export function Sidebar() {
  const [collapsed, setCollapsed] = useState(false)
- const [user, setUser] = useState<User | null>(null);
- const [profile, setProfile] = useState<Profile | null>(null);
+ const [user, setUser] = useState<User | null>(null)
+ const [profile, setProfile] = useState<Profile | null>(null)
  const pathname = usePathname()
  const router = useRouter()
  const supabase = createClient()
 
  useEffect(() => {
   const fetchUserData = async () => {
-   const { data: { user } } = await supabase.auth.getUser();
-   setUser(user);
+   const {
+    data: { user },
+   } = await supabase.auth.getUser()
+   setUser(user)
 
    if (user) {
     const { data: profileData, error } = await supabase
-     .from('profiles')
-     .select('first_name, last_name')
-     .eq('id', user.id)
-     .single();
+     .from("profiles")
+     .select("first_name, last_name")
+     .eq("id", user.id)
+     .single()
 
     if (error) {
-     console.error("Erro ao buscar perfil:", error);
+     console.error("Erro ao buscar perfil:", error)
     } else {
-     setProfile(profileData);
+     setProfile(profileData)
     }
    }
   }
-  fetchUserData();
- }, [supabase]);
-
+  fetchUserData()
+ }, [supabase])
 
  const handleSignOut = async () => {
   await supabase.auth.signOut()
@@ -93,12 +94,12 @@ export function Sidebar() {
 
  const getInitials = () => {
   if (profile?.first_name && profile?.last_name) {
-   return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+   return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
   }
   if (user?.email) {
-   return user.email[0].toUpperCase();
+   return user.email[0].toUpperCase()
   }
-  return 'U';
+  return "U"
  }
 
  return (
@@ -108,11 +109,12 @@ export function Sidebar() {
     collapsed ? "w-16" : "w-64"
    )}
   >
+
    <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
     {!collapsed && (
      <div className="flex items-center gap-2">
-      <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-       <FileText className="w-4 h-4 text-sidebar-primary-foreground" />
+      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+       <FileText className="w-4 h-4 text-primary-foreground" />
       </div>
       <div>
        <h1 className="font-semibold text-sidebar-foreground">ContractApp</h1>
@@ -166,11 +168,9 @@ export function Sidebar() {
      {!collapsed && (
       <div className="flex-1 min-w-0">
        <p className="text-sm font-medium text-sidebar-foreground truncate">
-        {profile ? `${profile.first_name} ${profile.last_name}` : (user?.email || 'Usuário')}
+        {profile ? `${profile.first_name} ${profile.last_name}` : user?.email || "Usuário"}
        </p>
-       <p className="text-xs text-sidebar-foreground/60 truncate">
-        {user?.email}
-       </p>
+       <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
       </div>
      )}
      {!collapsed && (

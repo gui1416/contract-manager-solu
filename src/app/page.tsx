@@ -13,13 +13,12 @@ export default async function HomePage() {
   } = await supabase.auth.getUser()
 
   if (user) {
-    redirect("/")
+    redirect("/dashboard")
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-16">
-        {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-foreground mb-4">ContractApp</h1>
           <p className="text-xl text-muted-foreground mb-8">Gerencie seus contratos de forma inteligente e segura</p>
@@ -33,7 +32,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           <Card>
             <CardHeader>
@@ -96,7 +94,6 @@ export default async function HomePage() {
           </Card>
         </div>
 
-        {/* CTA Section */}
         <div className="text-center">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>

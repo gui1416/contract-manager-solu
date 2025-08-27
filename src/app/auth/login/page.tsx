@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +30,7 @@ export default function LoginPage() {
     password,
    })
    if (error) throw error
-   router.push("/")
+   router.push("/dashboard")
   } catch (error: unknown) {
    setError(error instanceof Error ? error.message : "Ocorreu um erro")
   } finally {
@@ -43,7 +42,6 @@ export default function LoginPage() {
   <div className="flex min-h-screen w-full items-center justify-center p-6 bg-background">
    <div className="w-full max-w-sm">
     <div className="flex flex-col gap-6">
-     {/* Logo */}
      <div className="flex items-center justify-center gap-2 mb-6">
       <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
        <FileText className="w-4 h-4 text-primary-foreground" />

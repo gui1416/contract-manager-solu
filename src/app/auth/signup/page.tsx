@@ -1,16 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText } from "lucide-react"
+import { FileText, KeyRound } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export default function SignUpPage() {
  const [email, setEmail] = useState("")
@@ -18,22 +18,28 @@ export default function SignUpPage() {
  const [firstName, setFirstName] = useState("")
  const [lastName, setLastName] = useState("")
  const [company, setCompany] = useState("")
- const [error, setError] = useState<string | null>(null)
+ const [secretCode, setSecretCode] = useState("")
  const [isLoading, setIsLoading] = useState(false)
  const router = useRouter()
 
  const handleSignUp = async (e: React.FormEvent) => {
   e.preventDefault()
-  const supabase = createClient()
   setIsLoading(true)
-  setError(null)
 
-  try {
+  if (secretCode !== process.env.NEXT_PUBLIC_SIGNUP_SECRET_CODE) {
+   toast.error("Código secreto inválido.")
+   setIsLoading(false)
+   return
+  }
+
+  const supabase = createClient()
+
+  const promise = async () => {
    const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-     emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/`,
+     emailRedirectTo: `${window.location.origin}/auth/callback`,
      data: {
       first_name: firstName,
       last_name: lastName,
@@ -42,19 +48,23 @@ export default function SignUpPage() {
     },
    })
    if (error) throw error
-   router.push("/auth/signup-success")
-  } catch (error: unknown) {
-   setError(error instanceof Error ? error.message : "Ocorreu um erro")
-  } finally {
-   setIsLoading(false)
-  }
+  };
+
+  toast.promise(promise, {
+   loading: 'Criando sua conta...',
+   success: () => {
+    router.push("/auth/signup-success");
+    return 'Conta criada! Verifique seu e-mail.';
+   },
+   error: (err) => `Erro ao criar conta: ${err.message}`,
+   finally: () => setIsLoading(false)
+  });
  }
 
  return (
   <div className="flex min-h-screen w-full items-center justify-center p-6 bg-background">
    <div className="w-full max-w-sm">
     <div className="flex flex-col gap-6">
-     {/* Logo */}
      <div className="flex items-center justify-center gap-2 mb-6">
       <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
        <FileText className="w-4 h-4 text-primary-foreground" />
@@ -117,7 +127,23 @@ export default function SignUpPage() {
            onChange={(e) => setPassword(e.target.value)}
           />
          </div>
-         {error && <p className="text-sm text-destructive">{error}</p>}
+
+         <div className="grid gap-2">
+          <Label htmlFor="secretCode">Código Secreto</Label>
+          <div className="relative">
+           <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+           <Input
+            id="secretCode"
+            type="password"
+            placeholder="Digite o código de acesso"
+            required
+            value={secretCode}
+            onChange={(e) => setSecretCode(e.target.value)}
+            className="pl-9"
+           />
+          </div>
+         </div>
+
          <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Criando conta..." : "Criar conta"}
          </Button>

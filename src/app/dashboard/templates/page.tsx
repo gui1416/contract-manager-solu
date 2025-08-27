@@ -21,6 +21,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { FileSignature, Plus, Search, MoreHorizontal, Edit, Trash2, Copy, Eye } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface Template {
  id: string
@@ -43,8 +44,6 @@ export default function TemplatesPage() {
  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
  const [formData, setFormData] = useState<Partial<Template>>({})
 
- const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-
  const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false)
  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null)
 
@@ -62,7 +61,7 @@ export default function TemplatesPage() {
    setTemplates(data || [])
   } catch (error) {
    console.error("Erro ao buscar templates:", error)
-   setFeedbackMessage({ type: 'error', text: 'Falha ao carregar templates.' })
+   toast.error("Falha ao carregar templates.")
   } finally {
    setIsLoading(false)
   }
@@ -70,7 +69,6 @@ export default function TemplatesPage() {
 
  const handleOpenDialog = (mode: "create" | "edit", template?: Template) => {
   setDialogMode(mode);
-  setFeedbackMessage(null);
   if (mode === 'edit' && template) {
    setSelectedTemplate(template);
    setFormData(template);
@@ -88,51 +86,54 @@ export default function TemplatesPage() {
 
  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
-  setFeedbackMessage(null)
 
-  try {
-   const { data: { user } } = await supabase.auth.getUser()
-   if (!user) throw new Error("Usuário não autenticado")
+  const promise = async () => {
+   const { data: { user } } = await supabase.auth.getUser();
+   if (!user) throw new Error("Usuário não autenticado");
 
    const templateData = {
     ...formData,
     user_id: user.id,
     variables: {},
     updated_at: new Date().toISOString()
-   }
+   };
 
    if (dialogMode === 'create') {
-    const { error } = await supabase.from("contract_templates").insert(templateData)
-    if (error) throw error
-    setFeedbackMessage({ type: 'success', text: 'Template criado com sucesso!' })
+    const { error } = await supabase.from("contract_templates").insert(templateData);
+    if (error) throw error;
    } else if (selectedTemplate) {
-    const { error } = await supabase.from("contract_templates").update(templateData).eq('id', selectedTemplate.id)
-    if (error) throw error
-    setFeedbackMessage({ type: 'success', text: 'Template atualizado com sucesso!' })
+    const { error } = await supabase.from("contract_templates").update(templateData).eq('id', selectedTemplate.id);
+    if (error) throw error;
    }
 
-   setDialogOpen(false)
-   fetchTemplates()
-  } catch (error: any) {
-   console.error("Erro ao salvar template:", error)
-   setFeedbackMessage({ type: 'error', text: `Erro ao salvar template: ${error.message}` })
-  }
+   setDialogOpen(false);
+   fetchTemplates();
+  };
+
+  toast.promise(promise, {
+   loading: 'Salvando template...',
+   success: `Template ${dialogMode === 'create' ? 'criado' : 'atualizado'} com sucesso!`,
+   error: 'Erro ao salvar template.'
+  });
  }
 
  const handleDeleteTemplate = async () => {
   if (!templateToDelete) return;
-  try {
+
+  const promise = async () => {
    const { error } = await supabase.from("contract_templates").delete().eq('id', templateToDelete.id);
    if (error) throw error;
-   setFeedbackMessage({ type: 'success', text: 'Template excluído com sucesso!' });
    fetchTemplates();
-  } catch (error: any) {
-   console.error("Erro ao excluir template:", error);
-   setFeedbackMessage({ type: 'error', text: `Erro ao excluir template: ${error.message}` });
-  } finally {
-   setDeleteAlertOpen(false);
-   setTemplateToDelete(null);
-  }
+  };
+
+  toast.promise(promise, {
+   loading: 'Excluindo template...',
+   success: 'Template excluído com sucesso!',
+   error: 'Erro ao excluir template.'
+  });
+
+  setDeleteAlertOpen(false);
+  setTemplateToDelete(null);
  };
 
  const openDeleteAlert = (template: Template) => {
@@ -143,7 +144,7 @@ export default function TemplatesPage() {
  const filteredTemplates = templates.filter(
   (template) =>
    template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-   template.description?.toLowerCase().includes(searchTerm.toLowerCase())
+   template.description?.toLowerCase().includes(searchTerm.toLowerCase()),
  )
 
  if (isLoading) {
@@ -188,11 +189,6 @@ export default function TemplatesPage() {
       onChange={(e) => setSearchTerm(e.target.value)}
      />
     </div>
-    {feedbackMessage && (
-     <div className={`text-sm ${feedbackMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-      {feedbackMessage.text}
-     </div>
-    )}
    </div>
 
    <div className="flex-1 overflow-auto p-6">

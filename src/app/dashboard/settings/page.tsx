@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Bell, Shield, Database, Save, LogOut } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface Profile {
  id: string
@@ -68,15 +68,16 @@ export default function SettingsPage() {
     setProfile(
      profileData || {
       id: user.id,
-      first_name: "",
-      last_name: "",
-      company: "",
+      first_name: user.user_metadata?.first_name || "",
+      last_name: user.user_metadata?.last_name || "",
+      company: user.user_metadata?.company || "",
       phone: "",
      },
     )
    }
   } catch (error) {
    console.error("Erro ao buscar dados do usuário:", error)
+   toast.error("Erro ao carregar dados do usuário.")
   } finally {
    setIsLoading(false)
   }
@@ -89,29 +90,41 @@ export default function SettingsPage() {
   const supabase = createClient()
   setIsSaving(true)
 
-  try {
+  const promise = async () => {
    const { error } = await supabase.from("profiles").upsert({
     id: profile.id,
     first_name: profile.first_name,
     last_name: profile.last_name,
     company: profile.company,
     phone: profile.phone,
+    updated_at: new Date().toISOString()
    })
-
    if (error) throw error
-
-   console.log("Perfil salvo com sucesso!")
-  } catch (error) {
-   console.error("Erro ao salvar perfil:", error)
-  } finally {
-   setIsSaving(false)
   }
+
+  toast.promise(promise, {
+   loading: 'Salvando perfil...',
+   success: 'Perfil salvo com sucesso!',
+   error: 'Erro ao salvar o perfil.'
+  })
+
+  setIsSaving(false)
  }
 
  const handleSignOut = async () => {
   const supabase = createClient()
   await supabase.auth.signOut()
   router.push("/auth/login")
+ }
+
+ const getInitials = () => {
+  if (profile?.first_name && profile?.last_name) {
+   return `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase();
+  }
+  if (user?.email) {
+   return user.email[0].toUpperCase();
+  }
+  return 'U';
  }
 
  if (isLoading) {
@@ -154,8 +167,7 @@ export default function SettingsPage() {
         <Avatar className="w-16 h-16">
          <AvatarImage src="/placeholder.svg?height=64&width=64" />
          <AvatarFallback className="text-lg">
-          {profile?.first_name?.[0]}
-          {profile?.last_name?.[0]}
+          {getInitials()}
          </AvatarFallback>
         </Avatar>
         <div>
