@@ -13,6 +13,8 @@ import {
  DialogDescription,
  DialogHeader,
  DialogTitle,
+ DialogFooter,
+ DialogClose,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -49,8 +51,23 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
  const supabase = createClient()
 
  useEffect(() => {
-  setFormData(contract || {})
- }, [contract])
+  if (open && mode === 'create') {
+   setFormData({
+    title: "",
+    description: "",
+    contract_type: "service",
+    client_name: "",
+    client_email: "",
+    contract_value: 0,
+    start_date: "",
+    end_date: "",
+    status: "draft",
+    tags: [],
+   })
+  } else if (open && mode === 'edit' && contract) {
+   setFormData(contract)
+  }
+ }, [open, mode, contract])
 
  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   if (e.target.files && e.target.files[0]) {
@@ -109,38 +126,44 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="max-w-2xl">
-    <DialogHeader>
+   <DialogContent className="max-w-2xl max-h-[90vh] grid grid-rows-[auto_1fr_auto] p-0">
+    <DialogHeader className="p-6 pb-4 border-b">
      <DialogTitle>{mode === 'create' ? 'Criar Novo Contrato' : 'Editar Contrato'}</DialogTitle>
      <DialogDescription>Preencha as informações do contrato.</DialogDescription>
     </DialogHeader>
-    <form onSubmit={handleSubmit} className="space-y-4">
-     <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2"><Label htmlFor="title">Título do Contrato</Label><Input id="title" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
-      <div className="space-y-2"><Label htmlFor="contract_type">Tipo de Contrato</Label><Select value={formData.contract_type} onValueChange={(value) => setFormData({ ...formData, contract_type: value })}><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="service">Prestação de Serviços</SelectItem><SelectItem value="supply">Fornecimento</SelectItem><SelectItem value="partnership">Parceria</SelectItem><SelectItem value="confidentiality">Confidencialidade</SelectItem><SelectItem value="employment">Trabalho</SelectItem><SelectItem value="other">Outro</SelectItem></SelectContent></Select></div>
-     </div>
-     <div className="space-y-2"><Label htmlFor="description">Descrição</Label><Textarea id="description" value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} /></div>
-     <div className="space-y-2"><Label htmlFor="tags">Tags (separadas por vírgula)</Label><Input id="tags" value={Array.isArray(formData.tags) ? formData.tags.join(", ") : ''} onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(",").map(tag => tag.trim()) })} /></div>
-     <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2"><Label htmlFor="client_name">Nome do Cliente</Label><Input id="client_name" value={formData.client_name || ''} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} required /></div>
-      <div className="space-y-2"><Label htmlFor="client_email">Email do Cliente</Label><Input id="client_email" type="email" value={formData.client_email || ''} onChange={(e) => setFormData({ ...formData, client_email: e.target.value })} /></div>
-     </div>
-     <div className="grid grid-cols-3 gap-4">
-      <div className="space-y-2"><Label htmlFor="contract_value">Valor (R$)</Label><Input id="contract_value" type="number" step="0.01" value={formData.contract_value || ''} onChange={(e) => setFormData({ ...formData, contract_value: Number(e.target.value) })} /></div>
-      <div className="space-y-2"><Label htmlFor="start_date">Data de Início</Label><Input id="start_date" type="date" value={formData.start_date || ''} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} /></div>
-      <div className="space-y-2"><Label htmlFor="end_date">Data de Término</Label><Input id="end_date" type="date" value={formData.end_date || ''} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} /></div>
-     </div>
-     <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="active">Ativo</SelectItem><SelectItem value="pending">Pendente</SelectItem><SelectItem value="expired">Vencido</SelectItem><SelectItem value="cancelled">Cancelado</SelectItem></SelectContent></Select></div>
-     <div className="space-y-2">
-      <Label htmlFor="file">Arquivo do Contrato</Label>
-      <Input id="file" type="file" ref={fileInputRef} onChange={handleFileChange} />
-      {(fileToUpload || formData.file_name) && <p className="text-sm text-muted-foreground">Arquivo selecionado: {fileToUpload?.name || formData.file_name}</p>}
-     </div>
-     <div className="flex justify-end gap-2 pt-4">
-      <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-      <Button type="submit">Salvar Contrato</Button>
-     </div>
-    </form>
+
+    <div className="overflow-y-auto">
+     <form id="contract-form" onSubmit={handleSubmit} className="p-6 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div className="space-y-2"><Label htmlFor="title">Título do Contrato</Label><Input id="title" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
+       <div className="space-y-2"><Label htmlFor="contract_type">Tipo de Contrato</Label><Select value={formData.contract_type} onValueChange={(value) => setFormData({ ...formData, contract_type: value })}><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="service">Prestação de Serviços</SelectItem><SelectItem value="supply">Fornecimento</SelectItem><SelectItem value="partnership">Parceria</SelectItem><SelectItem value="confidentiality">Confidencialidade</SelectItem><SelectItem value="employment">Trabalho</SelectItem><SelectItem value="other">Outro</SelectItem></SelectContent></Select></div>
+      </div>
+      <div className="space-y-2"><Label htmlFor="description">Descrição</Label><Textarea id="description" value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} /></div>
+      <div className="space-y-2"><Label htmlFor="tags">Tags (separadas por vírgula)</Label><Input id="tags" value={Array.isArray(formData.tags) ? formData.tags.join(", ") : ''} onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(",").map(tag => tag.trim()) })} /></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div className="space-y-2"><Label htmlFor="client_name">Nome do Cliente</Label><Input id="client_name" value={formData.client_name || ''} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} required /></div>
+       <div className="space-y-2"><Label htmlFor="client_email">Email do Cliente</Label><Input id="client_email" type="email" value={formData.client_email || ''} onChange={(e) => setFormData({ ...formData, client_email: e.target.value })} /></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+       <div className="space-y-2"><Label htmlFor="contract_value">Valor (R$)</Label><Input id="contract_value" type="number" step="0.01" value={formData.contract_value || ''} onChange={(e) => setFormData({ ...formData, contract_value: Number(e.target.value) })} /></div>
+       <div className="space-y-2"><Label htmlFor="start_date">Data de Início</Label><Input id="start_date" type="date" value={formData.start_date || ''} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} /></div>
+       <div className="space-y-2"><Label htmlFor="end_date">Data de Término</Label><Input id="end_date" type="date" value={formData.end_date || ''} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} /></div>
+      </div>
+      <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="active">Ativo</SelectItem><SelectItem value="pending">Pendente</SelectItem><SelectItem value="expired">Vencido</SelectItem><SelectItem value="cancelled">Cancelado</SelectItem></SelectContent></Select></div>
+      <div className="space-y-2">
+       <Label htmlFor="file">Arquivo do Contrato</Label>
+       <Input id="file" type="file" ref={fileInputRef} onChange={handleFileChange} />
+       {(fileToUpload || formData.file_name) && <p className="text-sm text-muted-foreground">Arquivo selecionado: {fileToUpload?.name || formData.file_name}</p>}
+      </div>
+     </form>
+    </div>
+
+    <DialogFooter className="p-6 pt-4 border-t">
+     <DialogClose asChild>
+      <Button type="button" variant="outline">Cancelar</Button>
+     </DialogClose>
+     <Button type="submit" form="contract-form">Salvar Contrato</Button>
+    </DialogFooter>
    </DialogContent>
   </Dialog>
  )

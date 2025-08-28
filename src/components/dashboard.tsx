@@ -23,7 +23,7 @@ import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { ThemeToggle } from "./theme-toggle"
 import { ExportDataDialog } from "./ExportDataDialog"
-import { ContractDialog } from "./ContractDialog" // Importado
+import { ContractDialog } from "./ContractDialog"
 
 interface Contract {
   id: string
@@ -88,7 +88,7 @@ export function Dashboard() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
-  const [contractDialogOpen, setContractDialogOpen] = useState(false) // Novo estado
+  const [contractDialogOpen, setContractDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
