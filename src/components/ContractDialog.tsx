@@ -19,14 +19,13 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { useForm, Controller, SubmitHandler } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { contractSchema, ContractFormData } from "@/lib/validators"
+import { contractSchema } from "@/lib/validators"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { z } from "zod"
 
 interface Contract {
  id: string
