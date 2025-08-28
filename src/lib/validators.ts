@@ -14,7 +14,6 @@ export const contractSchema = z.object({
   if (!val) return [];
   return val.split(',').map(tag => tag.trim()).filter(Boolean);
  }),
- file: z.any().optional(),
 });
 
 export type ContractFormData = z.infer<typeof contractSchema>;

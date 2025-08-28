@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,8 +38,6 @@ interface Contract {
  start_date: string | null
  end_date: string | null
  status: string
- file_url: string | null
- file_name: string | null
  created_at: string
  tags: string[] | null
 }
@@ -86,9 +84,6 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
   },
  })
 
- const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
-
- const fileInputRef = useRef<HTMLInputElement>(null)
  const supabase = createClient()
 
  useEffect(() => {
@@ -107,7 +102,6 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
      end_date: contract.end_date ? new Date(contract.end_date) : undefined,
     };
     reset(formValues);
-    setSelectedFileName(contract.file_name || null);
    } else {
     reset({
      title: "",
@@ -121,7 +115,6 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
      start_date: undefined,
      end_date: undefined,
     });
-    setSelectedFileName(null);
    }
   }
  }, [open, mode, contract, reset]);
@@ -131,25 +124,8 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
    const { data: { user } } = await supabase.auth.getUser()
    if (!user) throw new Error("Usuário não autenticado")
 
-   let file_url = contract?.file_url || null
-   let file_name = contract?.file_name || null
-   const fileToUpload = fileInputRef.current?.files?.[0]
-
-   if (fileToUpload) {
-    const filePath = `${user.id}/${Date.now()}_${fileToUpload.name}`
-    const { error: uploadError } = await supabase.storage.from("contracts").upload(filePath, fileToUpload)
-    if (uploadError) throw uploadError
-
-    const { data: publicUrlData } = supabase.storage.from("contracts").getPublicUrl(filePath)
-    file_url = publicUrlData.publicUrl
-    file_name = fileToUpload.name
-    setSelectedFileName(fileToUpload.name)
-   }
-
    const contractData = {
     ...data,
-    file_url,
-    file_name,
     user_id: user.id,
     contract_value: Number(data.contract_value) || null,
     updated_at: new Date().toISOString(),
@@ -318,23 +294,6 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
          </Select>
         )}
        />
-      </div>
-      <div className="space-y-2">
-       <Label htmlFor="file">Arquivo do Contrato</Label>
-       <Input
-        id="file"
-        type="file"
-        ref={fileInputRef}
-        onChange={e => {
-         const file = e.target.files?.[0]
-         setSelectedFileName(file ? file.name : contract?.file_name || null)
-        }}
-       />
-       {selectedFileName && (
-        <p className="text-sm text-muted-foreground">
-         Arquivo atual: {selectedFileName}
-        </p>
-       )}
       </div>
      </form>
     </div>

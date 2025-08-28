@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { FileText, Plus, Search, MoreHorizontal, Download, Edit, Trash2, Eye } from "lucide-react"
+import { FileText, Plus, Search, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { ContractDialog } from "@/components/ContractDialog"
@@ -25,8 +25,6 @@ interface Contract {
   start_date: string
   end_date: string
   status: string
-  file_url: string
-  file_name: string
   created_at: string
   tags: string[]
 }
@@ -105,14 +103,6 @@ export default function ContractsPage() {
     if (!contractToDelete) return
 
     const promise = async () => {
-      if (contractToDelete.file_url) {
-        const filePath = new URL(contractToDelete.file_url).pathname.split('/public/contracts/')[1]
-        if (filePath) {
-          const { error: removeError } = await supabase.storage.from('contracts').remove([filePath])
-          if (removeError) throw removeError
-        }
-      }
-
       const { error } = await supabase.from("contracts").delete().eq('id', contractToDelete.id)
       if (error) throw error
       fetchContracts()
@@ -248,7 +238,6 @@ export default function ContractsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem disabled><Eye className="w-4 h-4 mr-2" />Ver Detalhes</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleOpenDialog('edit', contract)}><Edit className="w-4 h-4 mr-2" />Editar</DropdownMenuItem>
-                        {contract.file_url && <DropdownMenuItem asChild><a href={contract.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-4 h-4 mr-2" />Baixar PDF</a></DropdownMenuItem>}
                         <DropdownMenuItem className="text-destructive" onClick={() => openDeleteAlert(contract)}>
                           <Trash2 className="w-4 h-4 mr-2" />Excluir
                         </DropdownMenuItem>
