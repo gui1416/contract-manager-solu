@@ -22,6 +22,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { ThemeToggle } from "./theme-toggle"
+import { ExportDataDialog } from "./ExportDataDialog"
+import { ContractDialog } from "./ContractDialog" // Importado
 
 interface Contract {
   id: string
@@ -85,6 +87,8 @@ export function Dashboard() {
     activeContractsTrend: "N/A",
   })
   const [isLoading, setIsLoading] = useState(true)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [contractDialogOpen, setContractDialogOpen] = useState(false) // Novo estado
 
   useEffect(() => {
     fetchDashboardData()
@@ -214,149 +218,155 @@ export function Dashboard() {
   ]
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-6 border-b border-border">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral dos seus contratos</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar Dados
-          </Button>
-          <Link href="/dashboard/contracts">
-            <Button size="sm">
+    <>
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Visão geral dos seus contratos</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar Dados
+            </Button>
+            <Button size="sm" onClick={() => setContractDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Contrato
             </Button>
-          </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsCards.map((stat, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                <stat.icon className="w-4 h-4 text-muted-foreground" />
+        <div className="flex-1 overflow-auto p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {statsCards.map((stat, index) => (
+              <Card key={index}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <stat.icon className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs text-green-600 mt-1">{stat.trend}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {stats.totalValue > 0 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Valor Total dos Contratos Ativos
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-                <p className="text-xs text-green-600 mt-1">{stat.trend}</p>
+                <div className="text-3xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</div>
+                <p className="text-sm text-muted-foreground mt-1">Soma de todos os contratos com status &quot;Ativo&quot;</p>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )}
 
-        {stats.totalValue > 0 && (
-          <Card className="mb-8">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Valor Total dos Contratos Ativos
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Contratos Recentes</CardTitle>
+                  <CardDescription>Seus últimos contratos cadastrados</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Buscar contratos..." className="pl-9 w-64" />
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filtros
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</div>
-              <p className="text-sm text-muted-foreground mt-1">Soma de todos os contratos com status &quot;Ativo&quot;</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Contratos Recentes</CardTitle>
-                <CardDescription>Seus últimos contratos cadastrados</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar contratos..." className="pl-9 w-64" />
-                </div>
-                <Button variant="outline" size="sm">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filtros
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {contracts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">Nenhum contrato encontrado</h3>
-                <p className="text-muted-foreground mb-4">Comece criando seu primeiro contrato</p>
-                <Link href="/dashboard/contracts">
-                  <Button>
+              {contracts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Nenhum contrato encontrado</h3>
+                  <p className="text-muted-foreground mb-4">Comece criando seu primeiro contrato</p>
+                  <Button onClick={() => setContractDialogOpen(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Primeiro Contrato
                   </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {contracts.map((contract) => (
-                  <div
-                    key={contract.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback>
-                          <FileText className="w-5 h-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-1">
-                        <h4 className="font-medium text-foreground">{contract.title}</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{contract.client_name}</span>
-                          <span>•</span>
-                          <span>{contract.contract_type.replace("_", " ")}</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {contracts.map((contract) => (
+                    <div
+                      key={contract.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-10 h-10">
+                          <AvatarFallback>
+                            <FileText className="w-5 h-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-foreground">{contract.title}</h4>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>{contract.client_name}</span>
+                            <span>•</span>
+                            <span>{contract.contract_type.replace("_", " ")}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        {contract.contract_value > 0 && (
-                          <p className="font-medium text-foreground">{formatCurrency(contract.contract_value)}</p>
-                        )}
-                        {contract.end_date && (
-                          <p className="text-sm text-muted-foreground">Vence em {formatDate(contract.end_date)}</p>
-                        )}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          {contract.contract_value > 0 && (
+                            <p className="font-medium text-foreground">{formatCurrency(contract.contract_value)}</p>
+                          )}
+                          {contract.end_date && (
+                            <p className="text-sm text-muted-foreground">Vence em {formatDate(contract.end_date)}</p>
+                          )}
+                        </div>
+                        {getStatusBadge(contract.status)}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                            <DropdownMenuItem>Baixar PDF</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      {getStatusBadge(contract.status)}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                          <DropdownMenuItem>Editar</DropdownMenuItem>
-                          <DropdownMenuItem>Baixar PDF</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
+                  ))}
+                  <div className="pt-4 text-center">
+                    <Link href="/dashboard/contracts">
+                      <Button variant="outline">Ver Todos os Contratos</Button>
+                    </Link>
                   </div>
-                ))}
-                <div className="pt-4 text-center">
-                  <Link href="/dashboard/contracts">
-                    <Button variant="outline">Ver Todos os Contratos</Button>
-                  </Link>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+      <ExportDataDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} />
+      <ContractDialog
+        open={contractDialogOpen}
+        onOpenChange={setContractDialogOpen}
+        mode="create"
+        contract={null}
+        onSuccess={fetchDashboardData}
+      />
+    </>
   )
 }

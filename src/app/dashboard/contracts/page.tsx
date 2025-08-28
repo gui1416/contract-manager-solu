@@ -1,27 +1,18 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { FileText, Plus, Search, MoreHorizontal, Download, Edit, Trash2, Eye } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { ContractDialog } from "@/components/ContractDialog"
+import { DeleteContractDialog } from "@/components/DeleteContractDialog"
 
 interface Contract {
   id: string
@@ -37,6 +28,7 @@ interface Contract {
   file_url: string
   file_name: string
   created_at: string
+  tags: string[]
 }
 
 const getStatusBadge = (status: string) => {
@@ -78,10 +70,7 @@ export default function ContractsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create")
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
-  const [formData, setFormData] = useState<Partial<Contract>>({})
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedContract, setSelectedContract] = useState<Partial<Contract> | null>(null)
 
   const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false)
   const [contractToDelete, setContractToDelete] = useState<Contract | null>(null)
@@ -108,80 +97,8 @@ export default function ContractsPage() {
 
   const handleOpenDialog = (mode: "create" | "edit", contract?: Contract) => {
     setDialogMode(mode)
-    if (mode === 'edit' && contract) {
-      setSelectedContract(contract)
-      setFormData(contract)
-    } else {
-      setSelectedContract(null)
-      setFormData({
-        title: "",
-        description: "",
-        contract_type: "service",
-        client_name: "",
-        client_email: "",
-        contract_value: 0,
-        start_date: "",
-        end_date: "",
-        status: "draft",
-      })
-    }
-    setFileToUpload(null)
-    if (fileInputRef.current) fileInputRef.current.value = ""
+    setSelectedContract(contract || null)
     setDialogOpen(true)
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFileToUpload(e.target.files[0])
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const promise = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Usuário não autenticado")
-
-      let file_url = formData.file_url || null
-      let file_name = formData.file_name || null
-
-      if (fileToUpload) {
-        const filePath = `${user.id}/${Date.now()}_${fileToUpload.name}`
-        const { error: uploadError } = await supabase.storage.from('contracts').upload(filePath, fileToUpload)
-        if (uploadError) throw uploadError
-
-        const { data: publicUrlData } = supabase.storage.from('contracts').getPublicUrl(filePath)
-        file_url = publicUrlData.publicUrl
-        file_name = fileToUpload.name
-      }
-
-      const contractData = {
-        ...formData,
-        file_url,
-        file_name,
-        user_id: user.id,
-        contract_value: Number(formData.contract_value) || 0,
-        updated_at: new Date().toISOString()
-      }
-
-      if (dialogMode === 'create') {
-        const { error } = await supabase.from("contracts").insert(contractData)
-        if (error) throw error
-      } else if (selectedContract) {
-        const { error } = await supabase.from("contracts").update(contractData).eq('id', selectedContract.id)
-        if (error) throw error
-      }
-
-      setDialogOpen(false)
-      fetchContracts()
-    };
-
-    toast.promise(promise, {
-      loading: 'Salvando contrato...',
-      success: `Contrato ${dialogMode === 'create' ? 'criado' : 'atualizado'} com sucesso!`,
-      error: 'Erro ao salvar contrato.'
-    });
   }
 
   const handleDeleteContract = async () => {
@@ -217,12 +134,14 @@ export default function ContractsPage() {
   }
 
   const filteredContracts = contracts.filter((contract) => {
+    const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch =
-      contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.client_name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || contract.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+      contract.title.toLowerCase().includes(searchTermLower) ||
+      contract.client_name.toLowerCase().includes(searchTermLower) ||
+      (Array.isArray(contract.tags) && contract.tags.some(tag => tag.toLowerCase().includes(searchTermLower)));
+    const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   if (isLoading) {
     return (
@@ -316,6 +235,11 @@ export default function ContractsPage() {
                         {contract.end_date && <div><span className="font-medium">Vencimento:</span><p>{formatDate(contract.end_date)}</p></div>}
                       </div>
                       {contract.description && <p className="text-sm text-muted-foreground">{contract.description}</p>}
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {Array.isArray(contract.tags) && contract.tags.map((tag, index) => (
+                          <Badge key={index} variant="secondary">{tag}</Badge>
+                        ))}
+                      </div>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -338,57 +262,20 @@ export default function ContractsPage() {
         )}
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{dialogMode === 'create' ? 'Criar Novo Contrato' : 'Editar Contrato'}</DialogTitle>
-            <DialogDescription>Preencha as informações do contrato.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label htmlFor="title">Título do Contrato</Label><Input id="title" value={formData.title || ''} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required /></div>
-              <div className="space-y-2"><Label htmlFor="contract_type">Tipo de Contrato</Label><Select value={formData.contract_type} onValueChange={(value) => setFormData({ ...formData, contract_type: value })}><SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger><SelectContent><SelectItem value="service">Prestação de Serviços</SelectItem><SelectItem value="supply">Fornecimento</SelectItem><SelectItem value="partnership">Parceria</SelectItem><SelectItem value="confidentiality">Confidencialidade</SelectItem><SelectItem value="employment">Trabalho</SelectItem><SelectItem value="other">Outro</SelectItem></SelectContent></Select></div>
-            </div>
-            <div className="space-y-2"><Label htmlFor="description">Descrição</Label><Textarea id="description" value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label htmlFor="client_name">Nome do Cliente</Label><Input id="client_name" value={formData.client_name || ''} onChange={(e) => setFormData({ ...formData, client_name: e.target.value })} required /></div>
-              <div className="space-y-2"><Label htmlFor="client_email">Email do Cliente</Label><Input id="client_email" type="email" value={formData.client_email || ''} onChange={(e) => setFormData({ ...formData, client_email: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2"><Label htmlFor="contract_value">Valor (R$)</Label><Input id="contract_value" type="number" step="0.01" value={formData.contract_value || ''} onChange={(e) => setFormData({ ...formData, contract_value: Number(e.target.value) })} /></div>
-              <div className="space-y-2"><Label htmlFor="start_date">Data de Início</Label><Input id="start_date" type="date" value={formData.start_date || ''} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} /></div>
-              <div className="space-y-2"><Label htmlFor="end_date">Data de Término</Label><Input id="end_date" type="date" value={formData.end_date || ''} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} /></div>
-            </div>
-            <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="active">Ativo</SelectItem><SelectItem value="pending">Pendente</SelectItem><SelectItem value="expired">Vencido</SelectItem><SelectItem value="cancelled">Cancelado</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2">
-              <Label htmlFor="file">Arquivo do Contrato</Label>
-              <Input id="file" type="file" ref={fileInputRef} onChange={handleFileChange} />
-              {(fileToUpload || formData.file_name) && <p className="text-sm text-muted-foreground">Arquivo selecionado: {fileToUpload?.name || formData.file_name}</p>}
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-              <Button type="submit">Salvar Contrato</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ContractDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        mode={dialogMode}
+        contract={selectedContract}
+        onSuccess={fetchContracts}
+      />
 
-      <Dialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Você tem certeza que deseja excluir o contrato &quot;{contractToDelete?.title}&quot;? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDeleteContract}>Excluir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteContractDialog
+        open={isDeleteAlertOpen}
+        onOpenChange={setDeleteAlertOpen}
+        contractName={contractToDelete?.title}
+        onConfirm={handleDeleteContract}
+      />
     </div>
   )
 }
