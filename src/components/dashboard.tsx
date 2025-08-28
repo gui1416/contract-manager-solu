@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -100,11 +100,7 @@ export function Dashboard() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setIsLoading(true)
 
     try {
@@ -174,7 +170,11 @@ export function Dashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const handleOpenDialog = (mode: "create" | "edit", contract?: Contract) => {
     setDialogMode(mode);

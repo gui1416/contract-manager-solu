@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useEffect } from "react"
+import React, { useEffect, useRef, useState } from "react"
+// Adiciona tipo para manipulação de arquivo
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -70,8 +71,8 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
   control,
   reset,
   formState: { errors },
- } = useForm<ContractFormInput>({
-  resolver: zodResolver(contractSchema) as any,
+ } = useForm({
+  resolver: zodResolver(contractSchema),
   defaultValues: {
    title: "",
    description: "",
@@ -87,6 +88,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
  const supabase = createClient()
 
  useEffect(() => {
+  // ...nenhuma lógica de arquivo...
   if (open) {
    if (mode === 'edit' && contract) {
     const formValues: ContractFormInput = {
@@ -124,6 +126,11 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
    const { data: { user } } = await supabase.auth.getUser()
    if (!user) throw new Error("Usuário não autenticado")
 
+   // Converter tags string para array de strings
+   const tagsArray = data.tags
+    ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+    : []
+
    const contractData = {
     ...data,
     user_id: user.id,
@@ -131,7 +138,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
     updated_at: new Date().toISOString(),
     start_date: data.start_date ? data.start_date.toISOString() : null,
     end_date: data.end_date ? data.end_date.toISOString() : null,
-    tags: data.tags,
+    tags: tagsArray,
    }
 
    if (mode === "create") {
@@ -162,7 +169,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
     </DialogHeader>
 
     <div className="overflow-y-auto">
-     <form id="contract-form" onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+     <form id="contract-form" onSubmit={handleSubmit(onSubmit as any)} className="p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
        <div className="space-y-2">
         <Label htmlFor="title">Título do Contrato</Label>
@@ -200,6 +207,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
        <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
        <Input id="tags" {...register("tags")} />
       </div>
+      {/* Campo de arquivo removido */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
        <div className="space-y-2">
         <Label htmlFor="client_name">Nome do Cliente</Label>
