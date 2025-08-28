@@ -16,6 +16,8 @@ import {
   Filter,
   MoreHorizontal,
   DollarSign,
+  Edit,
+  Trash2,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -24,6 +26,8 @@ import Link from "next/link"
 import { ThemeToggle } from "./theme-toggle"
 import { ExportDataDialog } from "./ExportDataDialog"
 import { ContractDialog } from "./ContractDialog"
+import { DeleteContractDialog } from "./DeleteContractDialog"
+import { toast } from "sonner"
 
 interface Contract {
   id: string
@@ -89,13 +93,18 @@ export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [contractDialogOpen, setContractDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create")
+  const [selectedContract, setSelectedContract] = useState<Partial<Contract> | null>(null)
+  const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false)
+  const [contractToDelete, setContractToDelete] = useState<Contract | null>(null)
+
+  const supabase = createClient()
 
   useEffect(() => {
     fetchDashboardData()
   }, [])
 
   const fetchDashboardData = async () => {
-    const supabase = createClient()
     setIsLoading(true)
 
     try {
@@ -167,6 +176,36 @@ export function Dashboard() {
     }
   }
 
+  const handleOpenDialog = (mode: "create" | "edit", contract?: Contract) => {
+    setDialogMode(mode);
+    setSelectedContract(contract || null);
+    setContractDialogOpen(true);
+  };
+
+  const openDeleteAlert = (contract: Contract) => {
+    setContractToDelete(contract);
+    setDeleteAlertOpen(true);
+  };
+
+  const handleDeleteContract = async () => {
+    if (!contractToDelete) return;
+
+    const promise = async () => {
+      const { error } = await supabase.from("contracts").delete().eq('id', contractToDelete.id);
+      if (error) throw error;
+      fetchDashboardData();
+    };
+
+    toast.promise(promise, {
+      loading: 'Excluindo contrato...',
+      success: 'Contrato excluído com sucesso!',
+      error: 'Erro ao excluir contrato.'
+    });
+
+    setDeleteAlertOpen(false);
+    setContractToDelete(null);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
@@ -231,7 +270,7 @@ export function Dashboard() {
               <Download className="w-4 h-4 mr-2" />
               Exportar Dados
             </Button>
-            <Button size="sm" onClick={() => setContractDialogOpen(true)}>
+            <Button size="sm" onClick={() => handleOpenDialog('create')}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Contrato
             </Button>
@@ -295,7 +334,7 @@ export function Dashboard() {
                   <FileText className="w-12 h-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">Nenhum contrato encontrado</h3>
                   <p className="text-muted-foreground mb-4">Comece criando seu primeiro contrato</p>
-                  <Button onClick={() => setContractDialogOpen(true)}>
+                  <Button onClick={() => handleOpenDialog('create')}>
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Primeiro Contrato
                   </Button>
@@ -339,10 +378,21 @@ export function Dashboard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem>Baixar PDF</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/contracts/${contract.id}`}>Ver detalhes</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenDialog('edit', contract)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled>
+                              <Download className="w-4 h-4 mr-2" />
+                              Baixar PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteAlert(contract)}>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -363,9 +413,15 @@ export function Dashboard() {
       <ContractDialog
         open={contractDialogOpen}
         onOpenChange={setContractDialogOpen}
-        mode="create"
-        contract={null}
+        mode={dialogMode}
+        contract={selectedContract}
         onSuccess={fetchDashboardData}
+      />
+      <DeleteContractDialog
+        open={isDeleteAlertOpen}
+        onOpenChange={setDeleteAlertOpen}
+        contractName={contractToDelete?.title}
+        onConfirm={handleDeleteContract}
       />
     </>
   )
