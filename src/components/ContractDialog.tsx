@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect } from "react"
 // Adiciona tipo para manipulação de arquivo
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -121,14 +121,14 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
   }
  }, [open, mode, contract, reset]);
 
- const onSubmit = async (data: ContractFormInput) => {
+ const onSubmit = async (data: any) => {
   const promise = async () => {
    const { data: { user } } = await supabase.auth.getUser()
    if (!user) throw new Error("Usuário não autenticado")
 
    // Converter tags string para array de strings
    const tagsArray = data.tags
-    ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+    ? data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
     : []
 
    const contractData = {
@@ -169,7 +169,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
     </DialogHeader>
 
     <div className="overflow-y-auto">
-     <form id="contract-form" onSubmit={handleSubmit(onSubmit as any)} className="p-6 space-y-4">
+     <form id="contract-form" onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
        <div className="space-y-2">
         <Label htmlFor="title">Título do Contrato</Label>
