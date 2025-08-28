@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect } from "react"
+import { z } from "zod"
 // Adiciona tipo para manipulação de arquivo
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -51,18 +52,7 @@ interface ContractDialogProps {
  onSuccess: () => void
 }
 
-type ContractFormInput = {
- title: string;
- description?: string | null;
- contract_type: string;
- client_name: string;
- client_email?: string | null;
- contract_value?: number | null;
- start_date?: Date | null;
- end_date?: Date | null;
- status: string;
- tags?: string;
-};
+
 
 export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }: ContractDialogProps) {
  const {
@@ -91,7 +81,7 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
   // ...nenhuma lógica de arquivo...
   if (open) {
    if (mode === 'edit' && contract) {
-    const formValues: ContractFormInput = {
+    const formValues = {
      title: contract.title || '',
      description: contract.description || '',
      contract_type: contract.contract_type || 'service',
@@ -120,16 +110,10 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
    }
   }
  }, [open, mode, contract, reset]);
-
- const onSubmit = async (data: any) => {
+ const onSubmit = async (data: z.infer<typeof contractSchema>) => {
   const promise = async () => {
    const { data: { user } } = await supabase.auth.getUser()
    if (!user) throw new Error("Usuário não autenticado")
-
-   // Converter tags string para array de strings
-   const tagsArray = data.tags
-    ? data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
-    : []
 
    const contractData = {
     ...data,
@@ -138,7 +122,6 @@ export function ContractDialog({ open, onOpenChange, mode, contract, onSuccess }
     updated_at: new Date().toISOString(),
     start_date: data.start_date ? data.start_date.toISOString() : null,
     end_date: data.end_date ? data.end_date.toISOString() : null,
-    tags: tagsArray,
    }
 
    if (mode === "create") {
