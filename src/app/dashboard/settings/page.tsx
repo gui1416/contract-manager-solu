@@ -14,6 +14,7 @@ import { User, Bell, Shield, Database, Save, LogOut } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface Profile {
  id: string
@@ -27,7 +28,7 @@ export default function SettingsPage() {
  const [profile, setProfile] = useState<Profile | null>(null)
  const [isLoading, setIsLoading] = useState(true)
  const [isSaving, setIsSaving] = useState(false)
- const [user, setUser] = useState<any>(null)
+ const [user, setUser] = useState<SupabaseUser | null>(null)
  const router = useRouter()
 
  const [notifications, setNotifications] = useState({

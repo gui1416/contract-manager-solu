@@ -114,7 +114,6 @@ export function Dashboard() {
       const now = new Date()
       const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const startOfTwoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
 
       const totalContractsThisMonth = allContracts.filter(c => new Date(c.created_at) >= startOfThisMonth).length;
       const totalContractsLastMonth = allContracts.filter(c => new Date(c.created_at) >= startOfLastMonth && new Date(c.created_at) < startOfThisMonth).length;
@@ -263,7 +262,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</div>
-              <p className="text-sm text-muted-foreground mt-1">Soma de todos os contratos com status "Ativo"</p>
+              <p className="text-sm text-muted-foreground mt-1">Soma de todos os contratos com status &quot;Ativo&quot;</p>
             </CardContent>
           </Card>
         )}

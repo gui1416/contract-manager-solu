@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -88,11 +88,7 @@ export default function ContractsPage() {
 
   const supabase = createClient()
 
-  useEffect(() => {
-    fetchContracts()
-  }, [])
-
-  const fetchContracts = async () => {
+  const fetchContracts = useCallback(async () => {
     setIsLoading(true)
     try {
       const { data, error } = await supabase.from("contracts").select("*").order("created_at", { ascending: false })
@@ -104,7 +100,11 @@ export default function ContractsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchContracts()
+  }, [fetchContracts])
 
   const handleOpenDialog = (mode: "create" | "edit", contract?: Contract) => {
     setDialogMode(mode)
@@ -378,7 +378,7 @@ export default function ContractsPage() {
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
             <DialogDescription>
-              Você tem certeza que deseja excluir o contrato "{contractToDelete?.title}"? Esta ação não pode ser desfeita.
+              Você tem certeza que deseja excluir o contrato &quot;{contractToDelete?.title}&quot;? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
